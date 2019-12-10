@@ -33,7 +33,8 @@ class DS4Controller(object):
         self.profile_options["default"] = self.default_profile
 
         rospy.init_node('ds4drv')
-        self.sub = rospy.Subscriber("/set_led", UInt32, self.callback_set_led)
+        self.sub = rospy.Subscriber("set_led", UInt32, self.callback_set_led)
+        self.sub_rumble = rospy.Subscriber("rumble", UInt32, self.callback_rumble)
 
         if self.profiles:
             self.profiles.append("default")
@@ -46,6 +47,13 @@ class DS4Controller(object):
             self.device.set_led((value & 0xff0000) >> 16,
                                 (value & 0x00ff00) >> 8,
                                 (value & 0x0000ff))
+
+    def callback_rumble(self, msg:UInt32):
+        if self.device is not None:
+            value = msg.data
+            rumble_small =  (value & 0x0F)
+            rumble_big = (value & 0xF0)
+            self.device.rumble(rumble_small, rumble_big)
 
     def fire_event(self, event, *args):
         self.loop.fire_event(event, *args)
