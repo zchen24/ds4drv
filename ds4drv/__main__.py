@@ -1,5 +1,7 @@
 import sys
 import signal
+import rospy
+from std_msgs.msg import UInt32
 
 from threading import Thread
 
@@ -30,10 +32,20 @@ class DS4Controller(object):
         self.profile_options = dict(options.parent.profiles)
         self.profile_options["default"] = self.default_profile
 
+        rospy.init_node('ds4drv')
+        self.sub = rospy.Subscriber("/set_led", UInt32, self.callback_set_led)
+
         if self.profiles:
             self.profiles.append("default")
 
         self.load_options(self.options)
+
+    def callback_set_led(self, msg:UInt32):
+        if self.device is not None:
+            value = msg.data
+            self.device.set_led((value & 0xff0000) >> 16,
+                                (value & 0x00ff00) >> 8,
+                                (value & 0x0000ff))
 
     def fire_event(self, event, *args):
         self.loop.fire_event(event, *args)
